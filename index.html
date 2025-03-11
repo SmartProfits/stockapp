@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>SmartProfits 库存管理系统</title>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  
+  <!-- Google Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* 基础样式 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    html, body {
+      font-family: 'Roboto', sans-serif;
+      background: #f5f7fa;
+      height: 100%;
+      color: #333;
+      width: 100%;
+      position: fixed;
+      overflow: hidden;
+    }
+
+    /* 页面管理 */
+    .page {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+    
+    /* 登录页面样式 */
+    #login-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    }
+    
+    .login-container {
+      width: 90%;
+      max-width: 400px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    
+    .login-header {
+      background: #003974;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .login-header h1 {
+      font-size: 24px;
+      font-weight: 500;
+    }
+    
+    .login-form {
+      padding: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .form-group .material-icons {
+      position: absolute;
+      left: 10px;
+      top: 12px;
+      color: #666;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 12px 12px 12px 40px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+      border-color: #003974;
+      box-shadow: 0 0 0 2px rgba(0, 57, 116, 0.2);
+      outline: none;
+    }
+    
+    .remember-me {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .remember-me input {
+      margin-right: 10px;
+    }
+    
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: #003974;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s;
+      text-align: center;
+    }
+    
+    .btn:hover {
+      background: #002a63;
+    }
+    
+    .btn .material-icons {
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    
+    .register-link {
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .register-link a {
+      color: #003974;
+      text-decoration: none;
+    }
+    
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+    
+    .error-message {
+      color: #d9534f;
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    /* 库存页面样式 */
+    /* 头部和导航 */
+    .header {
+      background: #003974;
+      color: white;
+      padding: 16px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      height: 60px;
+    }
+    
+    .header h1 {
+      font-size: 20px;
+      font-weight: 500;
+    }
+    
+    .nav-icon {
+      cursor: pointer;
+    }
+    
+    /* 侧边导航 */
+    .sidenav {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 1001;
+      top: 0;
+      left: 0;
+      background-color: white;
+      overflow-x: hidden;
+      transition: 0.3s;
+      box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+      padding-top: 60px;
+    }
+    
+    .sidenav a {
+      padding: 16px;
+      text-decoration: none;
+      font-size: 16px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      transition: 0.3s;
+    }
+    
+    .sidenav a:hover {
+      background-color: #f1f1f1;
+    }
+    
+    .sidenav .material-icons {
+      margin-right: 16px;
+    }
+    
+    .sidenav .closebtn {
+      position: absolute;
+      top: 0;
+      right: 10px;
+      font-size: 36px;
+      margin-left: 50px;
+    }
+    
+    /* 主要内容区域 */
+    .main-content {
+      position: absolute;
+      top: 60px;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* 搜索框 */
+    .search-container {
+      margin-bottom: 16px;
+      position: relative;
+    }
+    
+    .search-container .material-icons {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      color: #666;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 10px 10px 10px 40px;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      font-size: 16px;
+      background: white;
+    }
+    
+    /* 筛选器容器 */
+    .filter-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    
+    .filter-button {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      justify-content: center;
+      width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .filter-button.active {
+      background: #003974;
+      color: white;
+      border-color: #003974;
+    }
+    
+    /* 卡片网格 */
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .card-image {
+      height: 120px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: transform 0.3s;
+      background-color: #f8f8f8;
+    }
+    
+    .card:hover .card-image img {
+      transform: scale(1.05);
+    }
+    
+    .card-content {
+      padding: 16px;
+    }
+    
+    .card-title {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    
+    .card-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #555;
+    }
+    
+    .card-info .material-icons {
+      font-size: 18px;
+      margin-right: 8px;
+      color: #003974;
+    }
+    
+    .card-category {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 57, 116, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 12px;
+    }
+    
+    .card-actions {
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #eee;
+    }
+    
+    .card-actions button {
+      background: transparent;
+      border: none;
+      color: #003974;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px;
+      font-size: 13px;
+    }
+    
+    /* 加载和消息 */
+    .loading-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+    }
+    
+    .loading-spinner {
+      border: 4px solid rgba(0, 57, 116, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #003974;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .no-items-message {
+      text-align: center;
+      color: #666;
+      margin: 40px 0;
+    }
+    
+    /* 悬浮动作按钮 */
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #003974;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: background 0.3s;
+      z-index: 999;
+    }
+    
+    .fab:hover {
+      background: #002a63;
+    }
+    
+    /* 响应式媒体查询 */
+    @media (max-width: 600px) {
+      .header h1 {
+        font-size: 18px;
+      }
+      
+      .cards-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .filter-container {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      .filter-button {
+        font-size: 13px;
+        padding: 8px 10px;
+      }
+      
+      .filter-button .material-icons {
+        font-size: 16px;
+      }
+      
+      .login-header h1 {
+        font-size: 20px;
+      }
+      
+      .form-control, .btn {
+        font-size: 14px;
+      }
+    }
+    
+    /* 过期指示器 */
+    .expired {
+      color: #d9534f;
+    }
+    
+    .expiring-soon {
+      color: #f0ad4e;
+    }
+    
+    /* 无图片占位符 */
+    .no-image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      color: #ccc;
+      background-color: #f8f8f8;
+    }
+    
+    .no-image-placeholder .material-icons {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+    
+    .no-image-placeholder span {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 登录页面 -->
+  <div id="login-page" class="page active">
+    <div class="login-container">
+      <div class="login-header">
+        <h1>SmartProfits 库存管理系统</h1>
+      </div>
+      
+      <div class="login-form">
+        <div class="form-group">
+          <i class="material-icons">email</i>
+          <input type="email" id="login-email" class="form-control" placeholder="邮箱" required>
+        </div>
+        
+        <div class="form-group">
+          <i class="material-icons">lock</i>
+          <input type="password" id="login-password" class="form-control" placeholder="密码" required>
+        </div>
+        
+        <div class="remember-me">
+          <input type="checkbox" id="remember-me">
+          <label for="remember-me">记住我</label>
+        </div>
+        
+        <button id="login-button" class="btn">
+          <i class="material-icons">login</i>登录
+        </button>
+        
+        <p id="login-error" class="error-message"></p>
+        
+        <div class="register-link">
+          <p>没有账号? <a href="#" id="show-register">注册</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 库存页面 -->
+  <div id="inventory-page" class="page">
+    <!-- 页面头部 -->
+    <header class="header">
+      <div class="nav-icon" onclick="openNav()">
+        <i class="material-icons">menu</i>
+      </div>
+      <h1>库存管理</h1>
+      <div class="nav-icon" id="logout-button">
+        <i class="material-icons">logout</i>
+      </div>
+    </header>
+    
+    <!-- 侧边导航 -->
+    <div id="mySidenav" class="sidenav">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+      <a href="#"><i class="material-icons">dashboard</i> 控制面板</a>
+      <a href="#" class="active"><i class="material-icons">inventory_2</i> 库存列表</a>
+      <a href="#"><i class="material-icons">add_box</i> 添加库存</a>
+      <a href="#"><i class="material-icons">remove_shopping_cart</i> 出库</a>
+      <a href="#"><i class="material-icons">history</i> 历史记录</a>
+      <a href="#"><i class="material-icons">settings</i> 设置</a>
+      <a href="#" id="sidebar-logout"><i class="material-icons">logout</i> 退出登录</a>
+    </div>
+    
+    <!-- 主要内容 -->
+    <div class="main-content">
+      <!-- 搜索栏 -->
+      <div class="search-container">
+        <i class="material-icons">search</i>
+        <input type="text" class="search-input" id="search-input" placeholder="搜索库存...">
+      </div>
+      
+      <!-- 筛选器 -->
+      <div class="filter-container">
+        <button class="filter-button active" data-category="all">
+          <i class="material-icons">category</i> 全部
+        </button>
+        <button class="filter-button" data-category="Office">
+          <i class="material-icons">work</i> 办公室
+        </button>
+        <button class="filter-button" data-category="Seafood">
+          <i class="material-icons">set_meal</i> 海鲜
+        </button>
+        <button class="filter-button" data-category="Ban Heang">
+          <i class="material-icons">restaurant</i> Ban Heang
+        </button>
+        <button class="filter-button" data-category="Hop Hup">
+          <i class="material-icons">lunch_dining</i> Hop Hup
+        </button>
+        <button class="filter-button" data-category="Tenom Kopi">
+          <i class="material-icons">coffee</i> Tenom Kopi
+        </button>
+        <button class="filter-button" data-category="Amplang">
+          <i class="material-icons">fastfood</i> Amplang
+        </button>
+        <button class="filter-button" data-category="Chocolate">
+          <i class="material-icons">bakery_dining</i> 巧克力
+        </button>
+        <button class="filter-button" data-category="Other">
+          <i class="material-icons">more_horiz</i> 其他
+        </button>
+      </div>
+      
+      <!-- 加载中旋转图标 - 初始可见 -->
+      <div class="loading-container" id="loading-container">
+        <div class="loading-spinner"></div>
+      </div>
+      
+      <!-- 错误信息 - 初始隐藏 -->
+      <p class="error-message" id="error-message" style="display: none;"></p>
+      
+      <!-- 无物品信息 - 初始隐藏 -->
+      <p class="no-items-message" id="no-items-message" style="display: none;">
+        未找到库存项。使用 + 按钮添加新项目。
+      </p>
+      
+      <!-- 卡片容器 -->
+      <div class="cards-container" id="inventory-cards" style="display: none;">
+        <!-- 卡片将被动态添加到这里 -->
+      </div>
+    </div>
+    
+    <!-- 悬浮动作按钮 -->
+    <div class="fab" id="add-item-fab">
+      <i class="material-icons">add</i>
+    </div>
+  </div>
+  
+  <script>
+    // Firebase 配置
+    const firebaseConfig = {
+      apiKey: "AIzaSyDAK5KVv9oln2qS5EfNzox1snM19wa83-o",
+      authDomain: "smart-profits-stock.firebaseapp.com",
+      databaseURL: "https://smart-profits-stock-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "smart-profits-stock",
+      storageBucket: "smart-profits-stock.firebasestorage.app",
+      messagingSenderId: "1029424292465",
+      appId: "1:1029424292465:web:6de46925db8818d462b1d0",
+      measurementId: "G-R0K4Q7JTGE"
+    };
+    
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+    
+    // 页面管理函数
+    function showPage(pageId) {
+      document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+      });
+      document.getElementById(pageId).classList.add('active');
+    }
+    
+    // 登录页面 DOM 元素
+    const loginButton = document.getElementById('login-button');
+    const loginEmail = document.getElementById('login-email');
+    const loginPassword = document.getElementById('login-password');
+    const loginError = document.getElementById('login-error');
+    const rememberMe = document.getElementById('remember-me');
+    
+    // 库存页面 DOM 元素
+    const searchInput = document.getElementById('search-input');
+    const inventoryCards = document.getElementById('inventory-cards');
+    const loadingContainer = document.getElementById('loading-container');
+    const errorMessage = document.getElementById('error-message');
+    const noItemsMessage = document.getElementById('no-items-message');
+    const filterButtons = document.querySelectorAll('.filter-button');
+    const logoutButton = document.getElementById('logout-button');
+    const sidebarLogout = document.getElementById('sidebar-logout');
+    const addItemFab = document.getElementById('add-item-fab');
+    
+    // 当前筛选器和搜索状态
+    let currentFilter = 'all';
+    let searchTerm = '';
+    
+    // 初始化 - 检查认证状态
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        // 用户已登录，显示库存页面并加载数据
+        showPage('inventory-page');
+        loadInventoryData();
+      } else {
+        // 用户未登录，显示登录页面
+        showPage('login-page');
+      }
+    });
+    
+    // 登录功能
+    loginButton.addEventListener('click', () => {
+      const email = loginEmail.value;
+      const password = loginPassword.value;
+      
+      if (!email || !password) {
+        loginError.textContent = '请输入邮箱和密码';
+        return;
+      }
+      
+      // 根据"记住我"复选框设置持久性
+      const persistence = rememberMe.checked 
+        ? firebase.auth.Auth.Persistence.LOCAL 
+        : firebase.auth.Auth.Persistence.SESSION;
+      
+      auth.setPersistence(persistence)
+        .then(() => {
+          return auth.signInWithEmailAndPassword(email, password);
+        })
+        .then((userCredential) => {
+          // 保存登录记录
+          const userId = userCredential.user.uid;
+          const userRef = db.ref('users/' + userId);
+          
+          userRef.update({
+            lastLogin: new Date().toISOString(),
+            loginTime: new Date().toISOString(),
+            email: email
+          });
+          
+          // 显示库存页面
+          showPage('inventory-page');
+          loadInventoryData();
+        })
+        .catch((error) => {
+          console.error('登录错误:', error);
+          loginError.textContent = error.message;
+        });
+    });
+    
+    // 加载库存数据
+    function loadInventoryData() {
+      // 显示加载旋转图标
+      loadingContainer.style.display = 'flex';
+      inventoryCards.style.display = 'none';
+      errorMessage.style.display = 'none';
+      noItemsMessage.style.display = 'none';
+      
+      // 根据用户角色获取库存路径（这将根据您的访问控制进行自定义）
+      const inventoryPaths = ['inventory/office', 'inventory/kepayan'];
+      
+      // 清除现有卡片
+      inventoryCards.innerHTML = '';
+      
+      let totalItems = 0;
+      
+      Promise.all(inventoryPaths.map(path => db.ref(path).once('value')))
+        .then(snapshots => {
+          // 处理所有快照
+          snapshots.forEach(snapshot => {
+            snapshot.forEach(itemSnapshot => {
+              const item = itemSnapshot.val();
+              item.id = itemSnapshot.key;
+              item.path = snapshot.ref.toString(); // 存储引用路径
+              
+              // 如果匹配当前筛选器和搜索，则添加卡片
+              if (matchesFilterAndSearch(item, currentFilter, searchTerm)) {
+                addItemCard(item);
+                totalItems++;
+              }
+            });
+          });
+          
+          // 隐藏加载旋转图标
+          loadingContainer.style.display = 'none';
+          
+          if (totalItems > 0) {
+            // 显示库存卡片
+            inventoryCards.style.display = 'grid';
+          } else {
+            // 显示无项目消息
+            noItemsMessage.style.display = 'block';
+          }
+        })
+        .catch(error => {
+          // 隐藏加载旋转图标并显示错误
+          loadingContainer.style.display = 'none';
+          errorMessage.textContent = '加载库存失败: ' + error.message;
+          errorMessage.style.display = 'block';
+          console.error('加载库存错误:', error);
+        });
+    }
+    
+    // 向容器添加单个项目卡片
+    function addItemCard(item) {
+      // 创建卡片元素
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = `card-${item.id}`;
+      
+      // 检查是否过期或即将过期
+      let expiryClass = '';
+      let expiryText = '无过期日期';
+      
+      // 检查两种过期日期字段
+      const expiryDateString = item.expiryDate || item.expiredDate || item.expiry_date || null;
+      
+      if (expiryDateString) {
+        let expiryDate;
+        
+        // 检查日期是否为 DD-MM-YYYY 格式并在需要时转换
+        if (expiryDateString.includes('-') && expiryDateString.split('-').length === 3) {
+          const parts = expiryDateString.split('-');
+          // 检查是否为 DD-MM-YYYY 格式
+          if (parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
+            expiryDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+          } else {
+            expiryDate = new Date(expiryDateString);
+          }
+        } else {
+          expiryDate = new Date(expiryDateString);
+        }
+        
+        const today = new Date();
+        const daysUntilExpiry = Math.floor((expiryDate - today) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilExpiry < 0) {
+          expiryClass = 'expired';
+          expiryText = `已过期 ${Math.abs(daysUntilExpiry)} 天`;
+        } else if (daysUntilExpiry < 30) {
+          expiryClass = 'expiring-soon';
+          expiryText = `${daysUntilExpiry} 天后过期`;
+        } else {
+          expiryText = `过期时间: ${formatDate(expiryDate)}`;
+        }
+      }
+      
+      // 构建卡片内容
+      card.innerHTML = `
+        <div class="card-image">
+          ${item.imageUrl 
+            ? `<img src="${item.imageUrl}" alt="${item.name}">`
+            : `<div class="no-image-placeholder">
+                <i class="material-icons">image_not_supported</i>
+                <span>无图片</span>
+               </div>`
+          }
+          <div class="card-category">${item.category || '未分类'}</div>
+        </div>
+        <div class="card-content">
+          <h2 class="card-title">${item.name}</h2>
+          <div class="card-info">
+            <i class="material-icons">inventory_2</i>
+            <span>${item.quantity} ${item.unit || '件'}</span>
+          </div>
+          <div class="card-info ${expiryClass}">
+            <i class="material-icons">event</i>
+            <span>${expiryText}</span>
+          </div>
+          <div class="card-info">
+            <i class="material-icons">place</i>
+            <span>${item.location || '未知位置'}</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button onclick="editItem('${item.id}')">
+            <i class="material-icons">edit</i> 编辑
+          </button>
+          <button onclick="stockOut('${item.id}')">
+            <i class="material-icons">remove_circle</i> 出库
+          </button>
+        </div>
+      `;
+      
+      // 将卡片添加到容器
+      inventoryCards.appendChild(card);
+    }
+    
+    // 检查项目是否匹配当前筛选器和搜索词
+    function matchesFilterAndSearch(item, filter, search) {
+      // 检查是否匹配筛选器
+      if (filter !== 'all' && item.category !== filter) {
+        return false;
+      }
+      
+      // 检查是否匹配搜索
+      if (search && !item.name.toLowerCase().includes(search.toLowerCase())) {
+        return false;
+      }
+      
+      return true;
+    }
+    
+    // 格式化日期显示
+    function formatDate(date) {
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+    
+    // 编辑项目功能（占位符）
+    function editItem(id) {
+      console.log('编辑项目:', id);
+      // 实现编辑功能或重定向到编辑页面
+      alert('编辑功能将在此处实现');
+    }
+    
+    // 出库功能（占位符）
+    function stockOut(id) {
+      console.log('出库项目:', id);
+      // 实现出库功能
+      alert('出库功能将在此处实现');
+    }
+    
+    // 侧边导航功能
+    function openNav() {
+      document.getElementById("mySidenav").style.width = "250px";
+    }
+    
+    function closeNav() {
+      document.getElementById("mySidenav").style.width = "0";
+    }
+    
+    // 筛选器按钮点击处理程序
+    filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        currentFilter = button.dataset.category;
+        loadInventoryData(); // 使用新筛选器重新加载
+      });
+    });
+    
+    // 搜索输入处理程序
+    searchInput.addEventListener('input', (e) => {
+      searchTerm = e.target.value.trim();
+      loadInventoryData(); // 使用新搜索词重新加载
+    });
+    
+    // 登出处理程序
+    function handleLogout() {
+      auth.signOut()
+        .then(() => {
+          // 显示登录页面
+          showPage('login-page');
+        })
+        .catch((error) => {
+          console.error('登出错误:', error);
+          alert('登出失败: ' + error.message);
+        });
+    }
+    
+    logoutButton.addEventListener('click', handleLogout);
+    sidebarLogout.addEventListener('click', handleLogout);
+    
+    // 添加项目按钮处理程序（占位符）
+    addItemFab.addEventListener('click', () => {
+      alert('添加项目功能将在此处实现');
+      // 实现添加项目功能或重定向到添加项目页面
+    });
+    
+    // 防止页面在 iOS 上弹跳
+    document.addEventListener('touchmove', function(e) {
+      // 仅在主内容不可滚动或在边界时阻止默认行为
+      const mainContent = document.querySelector('.main-content');
+      const scrollTop = mainContent.scrollTop;
+      const scrollHeight = mainContent.scrollHeight;
+      const offsetHeight = mainContent.offsetHeight;
+      
+      if ((scrollTop <= 0 && e.touches[0].screenY > e.touches[0].screenY) || 
+          (scrollTop + offsetHeight >= scrollHeight && e.touches[0].screenY < e.touches[0].screenY)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+  </script>
+</body>
+</html> 
