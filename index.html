@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>SmartProfits 库存管理系统</title>
   
+  <!-- PWA 支持 -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#003974">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SmartProfits">
+  <link rel="apple-touch-icon" href="icons/s2.png">
+  
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -42,10 +50,15 @@
       width: 100%;
       height: 100%;
       display: none;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s;
     }
 
     .page.active {
       display: block;
+      visibility: visible;
+      opacity: 1;
     }
     
     /* 登录页面样式 */
@@ -967,6 +980,86 @@
         e.preventDefault();
       }
     }, { passive: false });
+
+    // PWA 更新检测和通知功能
+    let newWorker;
+    let refreshing = false;
+
+    // 添加更新提示 UI
+    const updateBar = document.createElement('div');
+    updateBar.style.display = 'none';
+    updateBar.style.position = 'fixed';
+    updateBar.style.bottom = '0';
+    updateBar.style.left = '0';
+    updateBar.style.right = '0';
+    updateBar.style.backgroundColor = '#003974';
+    updateBar.style.color = 'white';
+    updateBar.style.padding = '16px';
+    updateBar.style.textAlign = 'center';
+    updateBar.style.zIndex = '9999';
+    updateBar.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.2)';
+
+    const updateMessage = document.createElement('div');
+    updateMessage.textContent = '应用有新版本可用！';
+    updateMessage.style.marginBottom = '10px';
+
+    const updateButton = document.createElement('button');
+    updateButton.textContent = '立即更新';
+    updateButton.style.backgroundColor = 'white';
+    updateButton.style.color = '#003974';
+    updateButton.style.border = 'none';
+    updateButton.style.padding = '8px 16px';
+    updateButton.style.borderRadius = '4px';
+    updateButton.style.cursor = 'pointer';
+    updateButton.style.fontWeight = 'bold';
+
+    updateBar.appendChild(updateMessage);
+    updateBar.appendChild(updateButton);
+    document.body.appendChild(updateBar);
+
+    // 注册 Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => {
+            console.log('ServiceWorker 注册成功: ', registration.scope);
+            
+            // 检测更新
+            registration.addEventListener('updatefound', () => {
+              console.log('发现新的 ServiceWorker');
+              newWorker = registration.installing;
+              
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('新的 ServiceWorker 已安装，但等待激活');
+                  // 显示更新通知
+                  updateBar.style.display = 'block';
+                }
+              });
+            });
+            
+            // 点击更新按钮处理函数
+            updateButton.addEventListener('click', () => {
+              if (newWorker) {
+                // 通知 Service Worker 跳过等待并激活
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+            
+            // 防止重复刷新
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              if (!refreshing) {
+                refreshing = true;
+                console.log('Service Worker 已更新，刷新页面');
+                window.location.reload();
+              }
+            });
+          })
+          .catch(error => {
+            console.log('ServiceWorker 注册失败: ', error);
+          });
+      });
+    }
   </script>
 </body>
 </html> 
