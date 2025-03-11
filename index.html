@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>SmartProfits 库存管理系统</title>
+  <title>SmartProfits Inventory Management System</title>
   
   <!-- PWA 支持 -->
   <link rel="manifest" href="manifest.json">
@@ -315,7 +315,6 @@
     /* 卡片网格 */
     .cards-container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 16px;
     }
     
@@ -461,10 +460,6 @@
         font-size: 18px;
       }
       
-      .cards-container {
-        grid-template-columns: 1fr;
-      }
-      
       .filter-container {
         grid-template-columns: repeat(3, 1fr);
       }
@@ -484,6 +479,21 @@
       
       .form-control, .btn {
         font-size: 14px;
+      }
+      
+      /* 非常小的屏幕才降为单列 */
+      .cards-container.grid-3x3 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 350px) {
+      .cards-container.grid-2x2 {
+        grid-template-columns: 1fr;
+      }
+      
+      .cards-container.grid-3x3 {
+        grid-template-columns: 1fr;
       }
     }
     
@@ -516,6 +526,269 @@
     .no-image-placeholder span {
       font-size: 14px;
     }
+    
+    /* 视图切换按钮 */
+    .grid-view-fab {
+      bottom: 20px;
+      right: 90px; /* 放在添加按钮的左侧 */
+      background: #4caf50; /* 使用不同的颜色区分 */
+    }
+
+    .grid-view-fab:hover {
+      background: #388e3c;
+    }
+    
+    /* 网格视图菜单 */
+    .grid-menu {
+      position: fixed;
+      bottom: 80px;
+      right: 90px;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      z-index: 998;
+      display: none;
+    }
+
+    .grid-menu.active {
+      display: block;
+    }
+
+    .grid-menu-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      cursor: pointer;
+    }
+
+    .grid-menu-item:hover {
+      background: #f1f1f1;
+    }
+
+    .grid-menu-item .material-icons {
+      margin-right: 10px;
+    }
+    
+    /* 卡片网格 - 不同布局 */
+    .cards-container.grid-1x1 {
+      grid-template-columns: 1fr;
+    }
+
+    .cards-container.grid-2x2 {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px; /* 减小间距以适应手机 */
+    }
+
+    .cards-container.grid-3x3 {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px; /* 进一步减小间距 */
+    }
+    
+    /* 调整网格布局下的卡片样式，特别针对手机屏幕 */
+    .cards-container.grid-1x1 .card-image {
+      height: 140px; /* 单列时图片较大 */
+    }
+
+    .cards-container.grid-2x2 .card-image {
+      height: 90px; /* 双列时图片中等大小 */
+    }
+
+    .cards-container.grid-3x3 .card-image {
+      height: 70px; /* 三列时图片较小 */
+    }
+
+    .cards-container.grid-2x2 .card-content {
+      padding: 10px;
+    }
+
+    .cards-container.grid-2x2 .card-title {
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .cards-container.grid-2x2 .card-info {
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .cards-container.grid-2x2 .card-info .material-icons {
+      font-size: 14px;
+    }
+
+    .cards-container.grid-3x3 .card-content {
+      padding: 8px;
+    }
+
+    .cards-container.grid-3x3 .card-title {
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .cards-container.grid-3x3 .card-info {
+      font-size: 10px;
+      margin-bottom: 2px;
+    }
+
+    .cards-container.grid-3x3 .card-info .material-icons {
+      font-size: 12px;
+      margin-right: 4px;
+    }
+
+    .cards-container.grid-3x3 .card-actions {
+      padding: 4px 8px;
+    }
+
+    .cards-container.grid-3x3 .card-actions button {
+      font-size: 10px;
+      padding: 3px;
+    }
+
+    .cards-container.grid-3x3 .card-actions button .material-icons {
+      font-size: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .cards-container.grid-3x3 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 400px) {
+      .cards-container.grid-2x2,
+      .cards-container.grid-3x3 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 卡片网格 - 原始样式保留，但针对手机尺寸优化 */
+    .cards-container {
+      display: grid;
+      gap: 16px;
+    }
+
+    /* 不同网格视图的基本设置 */
+    .cards-container.grid-1x1 {
+      grid-template-columns: 1fr;
+    }
+
+    .cards-container.grid-2x2 {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px; /* 减小间距 */
+    }
+
+    .cards-container.grid-3x3 {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px; /* 进一步减小间距 */
+    }
+
+    /* 针对6.1-6.7英寸手机的样式优化 */
+    @media (min-width: 360px) and (max-width: 428px) {
+      /* 手机上卡片基本样式微调 */
+      .card {
+        border-radius: 6px;
+      }
+      
+      /* 1x1视图(单列)在手机上的样式 */
+      .cards-container.grid-1x1 .card-image {
+        height: 160px;
+      }
+      
+      .cards-container.grid-1x1 .card-content {
+        padding: 12px;
+      }
+      
+      /* 2x2视图(双列)在手机上的样式 */
+      .cards-container.grid-2x2 .card-image {
+        height: 80px;
+      }
+      
+      .cards-container.grid-2x2 .card-content {
+        padding: 8px;
+      }
+      
+      .cards-container.grid-2x2 .card-title {
+        font-size: 14px;
+        margin-bottom: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .cards-container.grid-2x2 .card-info {
+        font-size: 12px;
+        margin-bottom: 3px;
+      }
+      
+      .cards-container.grid-2x2 .card-info .material-icons {
+        font-size: 14px;
+        margin-right: 4px;
+      }
+      
+      .cards-container.grid-2x2 .card-actions {
+        padding: 6px;
+      }
+      
+      .cards-container.grid-2x2 .card-actions button {
+        font-size: 11px;
+        padding: 2px;
+      }
+      
+      .cards-container.grid-2x2 .card-actions button .material-icons {
+        font-size: 14px;
+      }
+      
+      /* 3x3视图(三列)在手机上的样式 */
+      .cards-container.grid-3x3 .card-image {
+        height: 50px;
+      }
+      
+      .cards-container.grid-3x3 .card-content {
+        padding: 6px;
+      }
+      
+      .cards-container.grid-3x3 .card-title {
+        font-size: 11px;
+        margin-bottom: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .cards-container.grid-3x3 .card-info {
+        font-size: 9px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .cards-container.grid-3x3 .card-info .material-icons {
+        font-size: 11px;
+        margin-right: 2px;
+      }
+      
+      .cards-container.grid-3x3 .card-actions {
+        padding: 3px;
+        display: flex;
+        justify-content: space-around;
+      }
+      
+      .cards-container.grid-3x3 .card-actions button {
+        font-size: 0; /* 隐藏文字 */
+        padding: 2px;
+      }
+      
+      .cards-container.grid-3x3 .card-actions button .material-icons {
+        font-size: 16px;
+        margin: 0;
+      }
+      
+      /* 3x3模式下的分类标签调整 */
+      .cards-container.grid-3x3 .card-category {
+        font-size: 8px;
+        padding: 2px 4px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -523,33 +796,33 @@
   <div id="login-page" class="page active">
     <div class="login-container">
       <div class="login-header">
-        <h1>SmartProfits 库存管理系统</h1>
+        <h1>SmartProfits Inventory Management</h1>
       </div>
       
       <div class="login-form">
         <div class="form-group">
           <i class="material-icons">email</i>
-          <input type="email" id="login-email" class="form-control" placeholder="邮箱" required>
+          <input type="email" id="login-email" class="form-control" placeholder="Email" required>
         </div>
         
         <div class="form-group">
           <i class="material-icons">lock</i>
-          <input type="password" id="login-password" class="form-control" placeholder="密码" required>
+          <input type="password" id="login-password" class="form-control" placeholder="Password" required>
         </div>
         
         <div class="remember-me">
           <input type="checkbox" id="remember-me">
-          <label for="remember-me">记住我</label>
+          <label for="remember-me">Remember me</label>
         </div>
         
         <button id="login-button" class="btn">
-          <i class="material-icons">login</i>登录
+          <i class="material-icons">login</i>Login
         </button>
         
         <p id="login-error" class="error-message"></p>
         
         <div class="register-link">
-          <p>没有账号? <a href="#" id="show-register">注册</a></p>
+          <p>Don't have an account? <a href="#" id="show-register">Register</a></p>
         </div>
       </div>
     </div>
@@ -562,7 +835,7 @@
       <div class="nav-icon" onclick="openNav()">
         <i class="material-icons">menu</i>
       </div>
-      <h1>库存管理</h1>
+      <h1>Inventory Management</h1>
       <div class="nav-icon" id="logout-button">
         <i class="material-icons">logout</i>
       </div>
@@ -571,13 +844,13 @@
     <!-- 侧边导航 -->
     <div id="mySidenav" class="sidenav">
       <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-      <a href="#"><i class="material-icons">dashboard</i> 控制面板</a>
-      <a href="#" class="active"><i class="material-icons">inventory_2</i> 库存列表</a>
-      <a href="#"><i class="material-icons">add_box</i> 添加库存</a>
-      <a href="#"><i class="material-icons">remove_shopping_cart</i> 出库</a>
-      <a href="#"><i class="material-icons">history</i> 历史记录</a>
-      <a href="#"><i class="material-icons">settings</i> 设置</a>
-      <a href="#" id="sidebar-logout"><i class="material-icons">logout</i> 退出登录</a>
+      <a href="#"><i class="material-icons">dashboard</i> Dashboard</a>
+      <a href="#" class="active"><i class="material-icons">inventory_2</i> Inventory List</a>
+      <a href="#"><i class="material-icons">add_box</i> Add Inventory</a>
+      <a href="#"><i class="material-icons">remove_shopping_cart</i> Stock Out</a>
+      <a href="#"><i class="material-icons">history</i> History</a>
+      <a href="#"><i class="material-icons">settings</i> Settings</a>
+      <a href="#" id="sidebar-logout"><i class="material-icons">logout</i> Logout</a>
     </div>
     
     <!-- 主要内容 -->
@@ -585,19 +858,19 @@
       <!-- 搜索栏 -->
       <div class="search-container">
         <i class="material-icons">search</i>
-        <input type="text" class="search-input" id="search-input" placeholder="搜索库存...">
+        <input type="text" class="search-input" id="search-input" placeholder="Search inventory...">
       </div>
       
       <!-- 筛选器 -->
       <div class="filter-container">
         <button class="filter-button active" data-category="all">
-          <i class="material-icons">category</i> 全部
+          <i class="material-icons">category</i> All
         </button>
         <button class="filter-button" data-category="Office">
-          <i class="material-icons">work</i> 办公室
+          <i class="material-icons">work</i> Office
         </button>
         <button class="filter-button" data-category="Seafood">
-          <i class="material-icons">set_meal</i> 海鲜
+          <i class="material-icons">set_meal</i> Seafood
         </button>
         <button class="filter-button" data-category="Ban Heang">
           <i class="material-icons">restaurant</i> Ban Heang
@@ -612,10 +885,10 @@
           <i class="material-icons">fastfood</i> Amplang
         </button>
         <button class="filter-button" data-category="Chocolate">
-          <i class="material-icons">bakery_dining</i> 巧克力
+          <i class="material-icons">bakery_dining</i> Chocolate
         </button>
         <button class="filter-button" data-category="Other">
-          <i class="material-icons">more_horiz</i> 其他
+          <i class="material-icons">more_horiz</i> Other
         </button>
       </div>
       
@@ -629,7 +902,7 @@
       
       <!-- 无物品信息 - 初始隐藏 -->
       <p class="no-items-message" id="no-items-message" style="display: none;">
-        未找到库存项。使用 + 按钮添加新项目。
+        No inventory items found. Use the + button to add new items.
       </p>
       
       <!-- 卡片容器 -->
@@ -641,6 +914,27 @@
     <!-- 悬浮动作按钮 -->
     <div class="fab" id="add-item-fab">
       <i class="material-icons">add</i>
+    </div>
+
+    <!-- 添加视图切换按钮 -->
+    <div class="fab grid-view-fab" id="grid-view-fab">
+      <i class="material-icons">grid_view</i>
+    </div>
+
+    <!-- 视图切换菜单 -->
+    <div class="grid-menu" id="grid-menu">
+      <div class="grid-menu-item" data-grid="grid-1x1">
+        <i class="material-icons">view_agenda</i>
+        <span>Single Column (1x1)</span>
+      </div>
+      <div class="grid-menu-item" data-grid="grid-2x2">
+        <i class="material-icons">view_module</i>
+        <span>Double Column (2x2)</span>
+      </div>
+      <div class="grid-menu-item" data-grid="grid-3x3">
+        <i class="material-icons">grid_view</i>
+        <span>Triple Column (3x3)</span>
+      </div>
     </div>
   </div>
   
@@ -710,7 +1004,7 @@
       const password = loginPassword.value;
       
       if (!email || !password) {
-        loginError.textContent = '请输入邮箱和密码';
+        loginError.textContent = 'Please enter email and password';
         return;
       }
       
@@ -739,7 +1033,7 @@
           loadInventoryData();
         })
         .catch((error) => {
-          console.error('登录错误:', error);
+          console.error('Login error:', error);
           loginError.textContent = error.message;
         });
     });
@@ -791,9 +1085,9 @@
         .catch(error => {
           // 隐藏加载旋转图标并显示错误
           loadingContainer.style.display = 'none';
-          errorMessage.textContent = '加载库存失败: ' + error.message;
+          errorMessage.textContent = 'Failed to load inventory: ' + error.message;
           errorMessage.style.display = 'block';
-          console.error('加载库存错误:', error);
+          console.error('Load inventory error:', error);
         });
     }
     
@@ -806,7 +1100,7 @@
       
       // 检查是否过期或即将过期
       let expiryClass = '';
-      let expiryText = '无过期日期';
+      let expiryText = 'No expiry date';
       
       // 检查两种过期日期字段
       const expiryDateString = item.expiryDate || item.expiredDate || item.expiry_date || null;
@@ -832,12 +1126,12 @@
         
         if (daysUntilExpiry < 0) {
           expiryClass = 'expired';
-          expiryText = `已过期 ${Math.abs(daysUntilExpiry)} 天`;
+          expiryText = `Expired ${Math.abs(daysUntilExpiry)} days ago`;
         } else if (daysUntilExpiry < 30) {
           expiryClass = 'expiring-soon';
-          expiryText = `${daysUntilExpiry} 天后过期`;
+          expiryText = `Expires in ${daysUntilExpiry} days`;
         } else {
-          expiryText = `过期时间: ${formatDate(expiryDate)}`;
+          expiryText = `Expiry: ${formatDate(expiryDate)}`;
         }
       }
       
@@ -848,16 +1142,16 @@
             ? `<img src="${item.imageUrl}" alt="${item.name}">`
             : `<div class="no-image-placeholder">
                 <i class="material-icons">image_not_supported</i>
-                <span>无图片</span>
+                <span>No image</span>
                </div>`
           }
-          <div class="card-category">${item.category || '未分类'}</div>
+          <div class="card-category">${item.category || 'Uncategorized'}</div>
         </div>
         <div class="card-content">
           <h2 class="card-title">${item.name}</h2>
           <div class="card-info">
             <i class="material-icons">inventory_2</i>
-            <span>${item.quantity} ${item.unit || '件'}</span>
+            <span>${item.quantity} ${item.unit || 'pcs'}</span>
           </div>
           <div class="card-info ${expiryClass}">
             <i class="material-icons">event</i>
@@ -865,15 +1159,15 @@
           </div>
           <div class="card-info">
             <i class="material-icons">place</i>
-            <span>${item.location || '未知位置'}</span>
+            <span>${item.location || 'Unknown location'}</span>
           </div>
         </div>
         <div class="card-actions">
           <button onclick="editItem('${item.id}')">
-            <i class="material-icons">edit</i> 编辑
+            <i class="material-icons">edit</i> <span class="action-text">Edit</span>
           </button>
           <button onclick="stockOut('${item.id}')">
-            <i class="material-icons">remove_circle</i> 出库
+            <i class="material-icons">remove_circle</i> <span class="action-text">Stock Out</span>
           </button>
         </div>
       `;
@@ -899,7 +1193,7 @@
     
     // 格式化日期显示
     function formatDate(date) {
-      return date.toLocaleDateString('zh-CN', {
+      return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
@@ -908,16 +1202,16 @@
     
     // 编辑项目功能（占位符）
     function editItem(id) {
-      console.log('编辑项目:', id);
+      console.log('Edit item:', id);
       // 实现编辑功能或重定向到编辑页面
-      alert('编辑功能将在此处实现');
+      alert('Edit functionality will be implemented here');
     }
     
     // 出库功能（占位符）
     function stockOut(id) {
-      console.log('出库项目:', id);
+      console.log('Stock out item:', id);
       // 实现出库功能
-      alert('出库功能将在此处实现');
+      alert('Stock out functionality will be implemented here');
     }
     
     // 侧边导航功能
@@ -953,8 +1247,8 @@
           showPage('login-page');
         })
         .catch((error) => {
-          console.error('登出错误:', error);
-          alert('登出失败: ' + error.message);
+          console.error('Logout error:', error);
+          alert('Logout failed: ' + error.message);
         });
     }
     
@@ -963,10 +1257,24 @@
     
     // 添加项目按钮处理程序（占位符）
     addItemFab.addEventListener('click', () => {
-      alert('添加项目功能将在此处实现');
+      alert('Add item functionality will be implemented here');
       // 实现添加项目功能或重定向到添加项目页面
     });
     
+    // 防止页面在 iOS 上弹跳
+    document.addEventListener('touchmove', function(e) {
+      // 仅在主内容不可滚动或在边界时阻止默认行为
+      const mainContent = document.querySelector('.main-content');
+      const scrollTop = mainContent.scrollTop;
+      const scrollHeight = mainContent.scrollHeight;
+      const offsetHeight = mainContent.offsetHeight;
+      
+      if ((scrollTop <= 0 && e.touches[0].screenY > e.touches[0].screenY) || 
+          (scrollTop + offsetHeight >= scrollHeight && e.touches[0].screenY < e.touches[0].screenY)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
     // PWA 更新检测和通知功能
     let newWorker;
     let refreshing = false;
@@ -986,11 +1294,11 @@
     updateBar.style.boxShadow = '0 -2px 10px rgba(0,0,0,0.2)';
 
     const updateMessage = document.createElement('div');
-    updateMessage.textContent = '应用有新版本可用！';
+    updateMessage.textContent = 'A new version of the app is available!';
     updateMessage.style.marginBottom = '10px';
 
     const updateButton = document.createElement('button');
-    updateButton.textContent = '立即更新';
+    updateButton.textContent = 'Update Now';
     updateButton.style.backgroundColor = 'white';
     updateButton.style.color = '#003974';
     updateButton.style.border = 'none';
@@ -1008,44 +1316,153 @@
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
           .then(registration => {
-            console.log('ServiceWorker 注册成功: ', registration.scope);
+            console.log('ServiceWorker registration successful: ', registration.scope);
             
-            // 检测更新
+            // Detect updates
             registration.addEventListener('updatefound', () => {
-              console.log('发现新的 ServiceWorker');
+              console.log('New ServiceWorker found');
               newWorker = registration.installing;
               
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('新的 ServiceWorker 已安装，但等待激活');
-                  // 显示更新通知
+                  console.log('New ServiceWorker installed but waiting for activation');
+                  // Show update notification
                   updateBar.style.display = 'block';
                 }
               });
             });
             
-            // 点击更新按钮处理函数
+            // Update button click handler
             updateButton.addEventListener('click', () => {
               if (newWorker) {
-                // 通知 Service Worker 跳过等待并激活
+                // Notify Service Worker to skip waiting and activate
                 newWorker.postMessage({ type: 'SKIP_WAITING' });
               }
             });
             
-            // 防止重复刷新
+            // Prevent duplicate refreshes
             navigator.serviceWorker.addEventListener('controllerchange', () => {
               if (!refreshing) {
                 refreshing = true;
-                console.log('Service Worker 已更新，刷新页面');
+                console.log('Service Worker updated, refreshing page');
                 window.location.reload();
               }
             });
           })
           .catch(error => {
-            console.log('ServiceWorker 注册失败: ', error);
+            console.log('ServiceWorker registration failed: ', error);
           });
       });
     }
+
+    // 视图切换功能
+    const gridViewFab = document.getElementById('grid-view-fab');
+    const gridMenu = document.getElementById('grid-menu');
+    const gridMenuItems = document.querySelectorAll('.grid-menu-item');
+
+    // 初始化默认网格视图
+    let currentGridView = localStorage.getItem('gridView') || 'grid-1x1';
+    updateGridView(currentGridView);
+
+    // 显示/隐藏网格菜单
+    gridViewFab.addEventListener('click', () => {
+      gridMenu.classList.toggle('active');
+    });
+
+    // 处理网格选择
+    gridMenuItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const gridType = item.getAttribute('data-grid');
+        updateGridView(gridType);
+        localStorage.setItem('gridView', gridType); // Save user preference
+        gridMenu.classList.remove('active');
+      });
+    });
+
+    // 点击其他地方关闭网格菜单
+    document.addEventListener('click', (event) => {
+      if (!gridViewFab.contains(event.target) && !gridMenu.contains(event.target)) {
+        gridMenu.classList.remove('active');
+      }
+    });
+
+    // 更新网格视图
+    function updateGridView(gridType) {
+      // 先清除所有网格类
+      inventoryCards.classList.remove('grid-1x1', 'grid-2x2', 'grid-3x3');
+      // 然后添加指定的网格类
+      inventoryCards.classList.add('cards-container', gridType);
+      
+      // 检测是否为手机屏幕
+      const isMobileDevice = window.innerWidth >= 360 && window.innerWidth <= 428;
+      
+      // 更新网格视图按钮图标
+      const gridIcon = gridViewFab.querySelector('.material-icons');
+      
+      switch(gridType) {
+        case 'grid-1x1':
+          gridIcon.textContent = 'view_agenda';
+          break;
+        case 'grid-2x2':
+          gridIcon.textContent = 'view_module';
+          break;
+        case 'grid-3x3':
+          gridIcon.textContent = 'grid_view';
+          break;
+      }
+      
+      // 标记当前活动视图
+      gridMenuItems.forEach(item => {
+        if (item.getAttribute('data-grid') === gridType) {
+          item.style.fontWeight = 'bold';
+          item.style.color = '#003974';
+        } else {
+          item.style.fontWeight = 'normal';
+          item.style.color = '';
+        }
+      });
+      
+      // 根据设备类型和网格视图调整布局
+      if (isMobileDevice) {
+        console.log('Applying grid view on mobile:', gridType);
+        // 在手机上特别处理3x3模式
+        if (gridType === 'grid-3x3') {
+          document.querySelectorAll('.action-text').forEach(el => {
+            el.style.display = 'none';
+          });
+        } else {
+          document.querySelectorAll('.action-text').forEach(el => {
+            el.style.display = 'inline';
+          });
+        }
+      }
+      
+      currentGridView = gridType;
+    }
+
+    // 确保在显示库存卡片时应用网格视图
+    const originalLoadInventoryData = loadInventoryData;
+    loadInventoryData = function() {
+      const result = originalLoadInventoryData.apply(this, arguments);
+      
+      // 在数据加载完成后确保应用网格视图设置
+      setTimeout(() => {
+        console.log('Applying stored grid view:', currentGridView);
+        updateGridView(currentGridView);
+        
+        // 确保卡片显示时应用网格视图
+        if (inventoryCards.style.display === 'none') {
+          inventoryCards.style.display = 'grid';
+        }
+      }, 200);
+      
+      return result;
+    };
+
+    // 添加窗口尺寸变化监听
+    window.addEventListener('resize', () => {
+      updateGridView(currentGridView);
+    });
   </script>
 </body>
 </html> 
