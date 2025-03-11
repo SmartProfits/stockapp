@@ -967,20 +967,6 @@
       // 实现添加项目功能或重定向到添加项目页面
     });
     
-    // 防止页面在 iOS 上弹跳
-    document.addEventListener('touchmove', function(e) {
-      // 仅在主内容不可滚动或在边界时阻止默认行为
-      const mainContent = document.querySelector('.main-content');
-      const scrollTop = mainContent.scrollTop;
-      const scrollHeight = mainContent.scrollHeight;
-      const offsetHeight = mainContent.offsetHeight;
-      
-      if ((scrollTop <= 0 && e.touches[0].screenY > e.touches[0].screenY) || 
-          (scrollTop + offsetHeight >= scrollHeight && e.touches[0].screenY < e.touches[0].screenY)) {
-        e.preventDefault();
-      }
-    }, { passive: false });
-
     // PWA 更新检测和通知功能
     let newWorker;
     let refreshing = false;
