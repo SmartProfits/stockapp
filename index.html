@@ -849,6 +849,7 @@
       <a href="#"><i class="material-icons">add_box</i> Add Inventory</a>
       <a href="#"><i class="material-icons">remove_shopping_cart</i> Stock Out</a>
       <a href="#"><i class="material-icons">history</i> History</a>
+      <a href="#" id="online-records-link" style="display: none;"><i class="material-icons">people</i> Online Record</a>
       <a href="#"><i class="material-icons">settings</i> Settings</a>
       <a href="#" id="sidebar-logout"><i class="material-icons">logout</i> Logout</a>
     </div>
@@ -938,6 +939,47 @@
     </div>
   </div>
   
+  <!-- 添加在线记录页面 -->
+  <div id="online-records-page" class="page">
+    <header class="header">
+      <div class="nav-icon" onclick="openNav()">
+        <i class="material-icons">menu</i>
+      </div>
+      <h1>Online Records</h1>
+      <div class="nav-icon" id="back-to-inventory">
+        <i class="material-icons">arrow_back</i>
+      </div>
+    </header>
+    
+    <div class="main-content">
+      <div class="loading-container" id="online-records-loading">
+        <div class="loading-spinner"></div>
+      </div>
+      
+      <div id="online-records-container" style="display: none;">
+        <table class="online-records-table" style="width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <thead style="background: #f2f2f2;">
+            <tr>
+              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Name</th>
+              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Email</th>
+              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Login Time</th>
+              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Last Active</th>
+              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="online-records-table-body">
+            <!-- Records will be dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+      
+      <p class="error-message" id="online-records-error" style="display: none;"></p>
+      <p class="no-items-message" id="no-online-records" style="display: none;">
+        No online records found.
+      </p>
+    </div>
+  </div>
+  
   <script>
     // Firebase 配置
     const firebaseConfig = {
@@ -992,11 +1034,37 @@
         // 用户已登录，显示库存页面并加载数据
         showPage('inventory-page');
         loadInventoryData();
+        
+        // 检查用户角色并初始化在线记录系统
+        getUserRole(user.uid).then(role => {
+          // 只对 sadmin 显示在线记录链接
+          const onlineRecordsLink = document.getElementById('online-records-link');
+          if (role === 'sadmin') {
+            onlineRecordsLink.style.display = 'flex';
+          } else {
+            onlineRecordsLink.style.display = 'none';
+          }
+          
+          // 初始化在线状态系统
+          initializePresenceSystem(user);
+        });
       } else {
         // 用户未登录，显示登录页面
         showPage('login-page');
       }
     });
+    
+    // 获取用户角色
+    function getUserRole(uid) {
+      return db.ref(`users/${uid}/role`).once('value')
+        .then(snapshot => {
+          return snapshot.val() || 'user';
+        })
+        .catch(error => {
+          console.error('Failed to get user role:', error);
+          return 'user';
+        });
+    }
     
     // 登录功能
     loginButton.addEventListener('click', () => {
@@ -1026,6 +1094,15 @@
             lastLogin: new Date().toISOString(),
             loginTime: new Date().toISOString(),
             email: email
+          });
+          
+          // 记录用户登录信息到 onlineRecords
+          db.ref(`onlineRecords/${userId}`).set({
+            userName: userCredential.user.displayName || email.split('@')[0] || 'Unknown',
+            email: email,
+            loginTime: new Date().toISOString(),
+            isOnline: true,
+            lastActive: new Date().toISOString()
           });
           
           // 显示库存页面
@@ -1241,15 +1318,31 @@
     
     // 登出处理程序
     function handleLogout() {
-      auth.signOut()
-        .then(() => {
-          // 显示登录页面
+      const user = auth.currentUser;
+      if (user) {
+        // 更新在线状态为离线
+        db.ref(`onlineRecords/${user.uid}`).update({
+          isOnline: false,
+          lastActive: new Date().toISOString()
+        }).then(() => {
+          auth.signOut()
+            .then(() => {
+              // 显示登录页面
+              showPage('login-page');
+            })
+            .catch((error) => {
+              console.error('Logout error:', error);
+              alert('Logout failed: ' + error.message);
+            });
+        }).catch(error => {
+          console.error('Failed to update online status:', error);
+          auth.signOut();
           showPage('login-page');
-        })
-        .catch((error) => {
-          console.error('Logout error:', error);
-          alert('Logout failed: ' + error.message);
         });
+      } else {
+        auth.signOut();
+        showPage('login-page');
+      }
     }
     
     logoutButton.addEventListener('click', handleLogout);
@@ -1463,6 +1556,197 @@
     window.addEventListener('resize', () => {
       updateGridView(currentGridView);
     });
+
+    // 初始化在线状态系统
+    function initializePresenceSystem(user) {
+      if (!user) return;
+      
+      const userStatusRef = db.ref(`onlineRecords/${user.uid}`);
+      const connectionRef = db.ref('.info/connected');
+      
+      connectionRef.on('value', (snapshot) => {
+        if (!snapshot.val()) return;
+        
+        userStatusRef.onDisconnect().update({
+          isOnline: false,
+          lastActive: new Date().toISOString()
+        }).then(() => {
+          userStatusRef.update({
+            isOnline: true,
+            lastActive: new Date().toISOString()
+          });
+        });
+      });
+      
+      // 添加活动跟踪
+      let activityTimeout;
+      const INACTIVE_TIMEOUT = 15 * 60 * 1000; // 15分钟
+      
+      function updateUserActivity() {
+        clearTimeout(activityTimeout);
+        
+        userStatusRef.update({
+          lastActive: new Date().toISOString()
+        });
+        
+        activityTimeout = setTimeout(() => {
+          userStatusRef.update({
+            isOnline: false
+          });
+        }, INACTIVE_TIMEOUT);
+      }
+      
+      // 跟踪用户活动
+      ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(
+        eventName => document.addEventListener(eventName, updateUserActivity, true)
+      );
+      
+      // 初始活动状态
+      updateUserActivity();
+    }
+    
+    // 添加在线记录页面的事件监听器
+    document.getElementById('online-records-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      showPage('online-records-page');
+      loadOnlineRecords();
+    });
+    
+    document.getElementById('back-to-inventory').addEventListener('click', () => {
+      showPage('inventory-page');
+    });
+    
+    // 加载在线记录数据
+    function loadOnlineRecords() {
+      const onlineRecordsLoading = document.getElementById('online-records-loading');
+      const onlineRecordsContainer = document.getElementById('online-records-container');
+      const onlineRecordsError = document.getElementById('online-records-error');
+      const noOnlineRecords = document.getElementById('no-online-records');
+      
+      onlineRecordsLoading.style.display = 'flex';
+      onlineRecordsContainer.style.display = 'none';
+      onlineRecordsError.style.display = 'none';
+      noOnlineRecords.style.display = 'none';
+      
+      const user = auth.currentUser;
+      if (!user) {
+        onlineRecordsLoading.style.display = 'none';
+        onlineRecordsError.textContent = 'You need to be logged in to view online records.';
+        onlineRecordsError.style.display = 'block';
+        return;
+      }
+      
+      // 检查用户是否有权限查看在线记录
+      getUserRole(user.uid).then(role => {
+        if (role !== 'sadmin') {
+          onlineRecordsLoading.style.display = 'none';
+          onlineRecordsError.textContent = 'You do not have permission to view online records.';
+          onlineRecordsError.style.display = 'block';
+          return;
+        }
+        
+        // 获取在线记录
+        db.ref('onlineRecords').on('value', snapshot => {
+          onlineRecordsLoading.style.display = 'none';
+          
+          const data = snapshot.val();
+          const tableBody = document.getElementById('online-records-table-body');
+          tableBody.innerHTML = '';
+          
+          if (data) {
+            // 添加自动清理旧记录（超过24小时）
+            const cutoff = new Date();
+            cutoff.setHours(cutoff.getHours() - 24);
+            
+            let recordCount = 0;
+            
+            Object.entries(data).forEach(([userId, record]) => {
+              const lastActive = new Date(record.lastActive);
+              
+              // 跳过或删除旧记录
+              if (lastActive < cutoff) {
+                db.ref(`onlineRecords/${userId}`).remove();
+                return;
+              }
+              
+              recordCount++;
+              
+              const tr = document.createElement('tr');
+              tr.style.borderBottom = '1px solid #ddd';
+              
+              const onlineStatus = record.isOnline ? 
+                '<span style="color: green; font-weight: bold;">Online</span>' : 
+                '<span style="color: red;">Offline</span>';
+              
+              // 计算上次活动以来的时间
+              const timeSinceLastActive = formatTimeSince(lastActive);
+              
+              tr.innerHTML = `
+                <td style="padding: 12px;">${record.userName || 'Unknown'}</td>
+                <td style="padding: 12px;">${record.email || 'N/A'}</td>
+                <td style="padding: 12px;">${formatDateTime(record.loginTime)}</td>
+                <td style="padding: 12px;">${formatDateTime(record.lastActive)} (${timeSinceLastActive})</td>
+                <td style="padding: 12px;">${onlineStatus}</td>
+              `;
+              
+              tableBody.appendChild(tr);
+            });
+            
+            if (recordCount > 0) {
+              onlineRecordsContainer.style.display = 'block';
+            } else {
+              noOnlineRecords.style.display = 'block';
+            }
+          } else {
+            noOnlineRecords.style.display = 'block';
+          }
+        }, error => {
+          onlineRecordsLoading.style.display = 'none';
+          onlineRecordsError.textContent = 'Failed to load online records: ' + error.message;
+          onlineRecordsError.style.display = 'block';
+          console.error('Load online records error:', error);
+        });
+      });
+    }
+    
+    // 格式化日期时间
+    function formatDateTime(isoString) {
+      if (!isoString) return 'N/A';
+      
+      const date = new Date(isoString);
+      if (isNaN(date)) return 'Invalid Date';
+      
+      return date.toLocaleString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+    
+    // 格式化时间间隔
+    function formatTimeSince(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      
+      let interval = seconds / 31536000;
+      if (interval > 1) return Math.floor(interval) + ' years ago';
+      
+      interval = seconds / 2592000;
+      if (interval > 1) return Math.floor(interval) + ' months ago';
+      
+      interval = seconds / 86400;
+      if (interval > 1) return Math.floor(interval) + ' days ago';
+      
+      interval = seconds / 3600;
+      if (interval > 1) return Math.floor(interval) + ' hours ago';
+      
+      interval = seconds / 60;
+      if (interval > 1) return Math.floor(interval) + ' minutes ago';
+      
+      return Math.floor(seconds) + ' seconds ago';
+    }
   </script>
 </body>
 </html> 
