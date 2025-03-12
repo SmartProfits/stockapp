@@ -914,7 +914,7 @@
     
     <!-- 悬浮动作按钮 -->
     <div class="fab" id="add-item-fab">
-      <i class="material-icons">add</i>
+      <i class="material-icons">refresh</i>
     </div>
 
     <!-- 添加视图切换按钮 -->
@@ -957,20 +957,18 @@
       </div>
       
       <div id="online-records-container" style="display: none;">
-        <table class="online-records-table" style="width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <thead style="background: #f2f2f2;">
-            <tr>
-              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Name</th>
-              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Email</th>
-              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Login Time</th>
-              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Last Active</th>
-              <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">Status</th>
-            </tr>
-          </thead>
-          <tbody id="online-records-table-body">
-            <!-- Records will be dynamically populated -->
-          </tbody>
-        </table>
+        <!-- 添加刷新和搜索栏 -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin: 0;">Users Online Status</h3>
+          <button id="refresh-online-records" class="filter-button" style="width: auto; padding: 8px 16px; display: flex; align-items: center; gap: 5px;">
+            <i class="material-icons">refresh</i> Refresh
+          </button>
+        </div>
+        
+        <!-- 将表格视图替换为卡片网格布局 -->
+        <div class="cards-container grid-2x2" id="online-records-cards">
+          <!-- Cards will be dynamically populated -->
+        </div>
       </div>
       
       <p class="error-message" id="online-records-error" style="display: none;"></p>
@@ -1350,8 +1348,14 @@
     
     // 添加项目按钮处理程序（占位符）
     addItemFab.addEventListener('click', () => {
-      alert('Add item functionality will be implemented here');
-      // 实现添加项目功能或重定向到添加项目页面
+      // 显示加载旋转图标
+      loadingContainer.style.display = 'flex';
+      inventoryCards.style.display = 'none';
+      errorMessage.style.display = 'none';
+      noItemsMessage.style.display = 'none';
+      
+      // 重新加载库存数据
+      loadInventoryData();
     });
     
     // 防止页面在 iOS 上弹跳
@@ -1622,6 +1626,7 @@
       const onlineRecordsContainer = document.getElementById('online-records-container');
       const onlineRecordsError = document.getElementById('online-records-error');
       const noOnlineRecords = document.getElementById('no-online-records');
+      const onlineRecordsCards = document.getElementById('online-records-cards');
       
       onlineRecordsLoading.style.display = 'flex';
       onlineRecordsContainer.style.display = 'none';
@@ -1650,8 +1655,7 @@
           onlineRecordsLoading.style.display = 'none';
           
           const data = snapshot.val();
-          const tableBody = document.getElementById('online-records-table-body');
-          tableBody.innerHTML = '';
+          onlineRecordsCards.innerHTML = ''; // 清空卡片容器
           
           if (data) {
             // 添加自动清理旧记录（超过24小时）
@@ -1671,25 +1675,52 @@
               
               recordCount++;
               
-              const tr = document.createElement('tr');
-              tr.style.borderBottom = '1px solid #ddd';
+              // 计算上次活动以来的时间
+              const timeSinceLastActive = formatTimeSince(lastActive);
+              
+              // 创建用户卡片
+              const card = document.createElement('div');
+              card.className = 'card';
               
               const onlineStatus = record.isOnline ? 
                 '<span style="color: green; font-weight: bold;">Online</span>' : 
                 '<span style="color: red;">Offline</span>';
               
-              // 计算上次活动以来的时间
-              const timeSinceLastActive = formatTimeSince(lastActive);
+              // 根据在线状态设置卡片顶部颜色
+              const statusBarColor = record.isOnline ? '#4caf50' : '#f44336';
               
-              tr.innerHTML = `
-                <td style="padding: 12px;">${record.userName || 'Unknown'}</td>
-                <td style="padding: 12px;">${record.email || 'N/A'}</td>
-                <td style="padding: 12px;">${formatDateTime(record.loginTime)}</td>
-                <td style="padding: 12px;">${formatDateTime(record.lastActive)} (${timeSinceLastActive})</td>
-                <td style="padding: 12px;">${onlineStatus}</td>
+              card.innerHTML = `
+                <div style="height: 8px; background-color: ${statusBarColor};"></div>
+                <div class="card-content">
+                  <h2 class="card-title">${record.userName || 'Unknown'}</h2>
+                  <div class="card-info">
+                    <i class="material-icons">email</i>
+                    <span>${record.email || 'N/A'}</span>
+                  </div>
+                  <div class="card-info">
+                    <i class="material-icons">login</i>
+                    <span>${formatDateTime(record.loginTime)}</span>
+                  </div>
+                  <div class="card-info">
+                    <i class="material-icons">access_time</i>
+                    <span>${formatDateTime(record.lastActive)}</span>
+                  </div>
+                  <div class="card-info">
+                    <i class="material-icons">update</i>
+                    <span>${timeSinceLastActive}</span>
+                  </div>
+                </div>
+                <div class="card-actions" style="justify-content: center; background-color: ${record.isOnline ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)'};">
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <i class="material-icons" style="color: ${record.isOnline ? 'green' : 'red'}">
+                      ${record.isOnline ? 'wifi' : 'wifi_off'}
+                    </i>
+                    <span>${onlineStatus}</span>
+                  </div>
+                </div>
               `;
               
-              tableBody.appendChild(tr);
+              onlineRecordsCards.appendChild(card);
             });
             
             if (recordCount > 0) {
@@ -1709,6 +1740,26 @@
       });
     }
     
+    // 添加刷新按钮事件监听器
+    document.addEventListener('DOMContentLoaded', () => {
+      const refreshButton = document.getElementById('refresh-online-records');
+      if (refreshButton) {
+        refreshButton.addEventListener('click', () => {
+          // 显示加载图标
+          document.getElementById('online-records-loading').style.display = 'flex';
+          document.getElementById('online-records-container').style.display = 'none';
+          
+          // 先解除之前的监听以避免重复
+          db.ref('onlineRecords').off();
+          
+          // 重新加载数据
+          setTimeout(() => {
+            loadOnlineRecords();
+          }, 500); // 增加短暂延迟以确保加载动画显示
+        });
+      }
+    });
+
     // 格式化日期时间
     function formatDateTime(isoString) {
       if (!isoString) return 'N/A';
