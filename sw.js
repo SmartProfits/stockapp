@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smartprofits-v4'; // 修改这个值会触发更新
+const CACHE_NAME = 'smartprofits-v5'; // 修改这个值会触发更新
 const ASSETS = [
   './',
   './index.html',
