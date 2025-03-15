@@ -1176,6 +1176,22 @@
       background-position: right 12px center;
       padding-right: 40px;
     }
+
+    /* 空状态样式 */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+      background-color: #f8f9fa;
+      border-radius: 12px;
+      min-height: 250px;
+      margin: 20px auto;
+      max-width: 500px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
   </style>
 </head>
 <body>
@@ -1443,9 +1459,13 @@
       </div>
       
       <p class="error-message" id="history-error" style="display: none;"></p>
-      <p class="no-items-message" id="no-history" style="display: none;">
-        No transaction history found for the selected period.
-      </p>
+      <div class="empty-state" id="no-history" style="display: none;">
+        <i class="material-icons" style="font-size: 48px; color: #ccc; margin-bottom: 16px;">history</i>
+        <h3 style="margin: 0 0 8px 0; color: #333; font-size: 18px;">No Transaction History</h3>
+        <p style="margin: 0; color: #666; max-width: 300px; text-align: center;">
+          There are no transactions for the selected period. Try changing the date filter or adding some stock transactions.
+        </p>
+      </div>
     </div>
   </div>
   
@@ -2128,11 +2148,12 @@
     
     // 格式化日期显示
     function formatDate(date) {
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      // 返回DD-MM-YYYY格式的日期
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始，需要+1
+      const year = date.getFullYear();
+      
+      return `${day}-${month}-${year}`;
     }
     
     // 编辑项目功能（占位符）
@@ -2769,161 +2790,164 @@
           const data = snapshot.val();
           historyCards.innerHTML = ''; // 清空卡片容器
           
-          if (data) {
-            // 按时间排序并根据类型过滤记录
-            const records = Object.entries(data)
-              .filter(([, record]) => {
-                if (typeFilter === 'all') {
-                  return true;
-                } else {
-                  return record.type === typeFilter;
-                }
-              })
-              .sort(([,a], [,b]) => new Date(b.time) - new Date(a.time));
+          if (!data || Object.keys(data).length === 0) {
+            // 没有任何记录
+            noHistory.style.display = 'flex';
+            historyContainer.style.display = 'block';
+            historyLoading.style.display = 'none';
+            return;
+          }
+          
+          // 按时间排序并根据类型过滤记录
+          const records = Object.entries(data)
+            .filter(([, record]) => {
+              if (typeFilter === 'all') {
+                return true;
+              } else {
+                return record.type === typeFilter;
+              }
+            })
+            .sort(([,a], [,b]) => new Date(b.time) - new Date(a.time));
+          
+          if (records.length === 0) {
+            // 有记录但被过滤掉了
+            noHistory.style.display = 'flex';
+            historyContainer.style.display = 'block';
+            historyLoading.style.display = 'none';
+            return;
+          }
+          
+          // 按注释(Comment)和日期对记录进行分组
+          const groupedRecords = {};
+          
+          records.forEach(([recordId, record]) => {
+            // 使用日期作为分组键（只取日期部分，不包含时间）
+            const recordDate = new Date(record.time);
+            const dateKey = `${recordDate.getFullYear()}-${(recordDate.getMonth()+1).toString().padStart(2, '0')}-${recordDate.getDate().toString().padStart(2, '0')}`;
             
-            if (records.length === 0) {
-              noHistory.style.display = 'block';
-              historyContainer.style.display = 'block';
-              historyLoading.style.display = 'none';
-              return;
+            // 创建注释键
+            const commentKey = record.comment || 'No Comment';
+            
+            // 如果日期键不存在，创建一个
+            if (!groupedRecords[dateKey]) {
+              groupedRecords[dateKey] = {};
             }
             
-            // 按注释(Comment)和日期对记录进行分组
-            const groupedRecords = {};
+            // 如果注释键不存在，创建一个
+            if (!groupedRecords[dateKey][commentKey]) {
+              groupedRecords[dateKey][commentKey] = {
+                records: [],
+                totalByUnit: {}, // 按单位统计总数
+                commentName: commentKey,
+                date: recordDate
+              };
+            }
             
-            records.forEach(([recordId, record]) => {
-              // 使用日期作为分组键（只取日期部分，不包含时间）
-              const recordDate = new Date(record.time);
-              const dateKey = `${recordDate.getFullYear()}-${(recordDate.getMonth()+1).toString().padStart(2, '0')}-${recordDate.getDate().toString().padStart(2, '0')}`;
+            // 添加记录并更新按单位分类的总数
+            groupedRecords[dateKey][commentKey].records.push(record);
+            const unit = record.unit || 'pcs';
+            if (!groupedRecords[dateKey][commentKey].totalByUnit[unit]) {
+              groupedRecords[dateKey][commentKey].totalByUnit[unit] = 0;
+            }
+            groupedRecords[dateKey][commentKey].totalByUnit[unit] += Math.abs(record.quantity);
+          });
+          
+          // 为每个分组创建卡片
+          Object.keys(groupedRecords).sort((a, b) => new Date(b) - new Date(a)).forEach(dateKey => {
+            Object.values(groupedRecords[dateKey]).forEach(group => {
+              // 创建卡片
+              const card = document.createElement('div');
+              card.className = 'card history-card';
               
-              // 创建注释键
-              const commentKey = record.comment || 'No Comment';
+              // 格式化日期和时间
+              const formattedDate = formatDate(group.date);
               
-              // 如果日期键不存在，创建一个
-              if (!groupedRecords[dateKey]) {
-                groupedRecords[dateKey] = {};
-              }
+              // 生成按单位分类的总数显示
+              let unitSummary = '';
+              Object.entries(group.totalByUnit).forEach(([unit, total]) => {
+                unitSummary += `<div>${total} ${unit}</div>`;
+              });
               
-              // 如果注释键不存在，创建一个
-              if (!groupedRecords[dateKey][commentKey]) {
-                groupedRecords[dateKey][commentKey] = {
-                  records: [],
-                  totalByUnit: {}, // 按单位统计总数
-                  commentName: commentKey,
-                  date: recordDate
-                };
-              }
+              // 卡片头部
+              const cardHeader = document.createElement('div');
+              cardHeader.className = 'card-header';
+              cardHeader.style.padding = '12px';
+              cardHeader.style.borderBottom = '1px solid #eee';
+              cardHeader.style.display = 'flex';
+              cardHeader.style.flexDirection = 'column'; // 改为纵向排列
+              cardHeader.style.alignItems = 'flex-start'; // 左对齐
+              cardHeader.style.cursor = 'pointer';
               
-              // 添加记录并更新按单位分类的总数
-              groupedRecords[dateKey][commentKey].records.push(record);
-              const unit = record.unit || 'pcs';
-              if (!groupedRecords[dateKey][commentKey].totalByUnit[unit]) {
-                groupedRecords[dateKey][commentKey].totalByUnit[unit] = 0;
-              }
-              groupedRecords[dateKey][commentKey].totalByUnit[unit] += Math.abs(record.quantity);
-            });
-            
-            // 为每个分组创建卡片
-            Object.keys(groupedRecords).sort((a, b) => new Date(b) - new Date(a)).forEach(dateKey => {
-              Object.values(groupedRecords[dateKey]).forEach(group => {
-                // 创建卡片
-                const card = document.createElement('div');
-                card.className = 'card history-card';
-                
-                // 格式化日期和时间
-                const formattedDate = formatDate(group.date);
-                
-                // 生成按单位分类的总数显示
-                let unitSummary = '';
-                Object.entries(group.totalByUnit).forEach(([unit, total]) => {
-                  unitSummary += `<div>${total} ${unit}</div>`;
-                });
-                
-                // 卡片头部
-                const cardHeader = document.createElement('div');
-                cardHeader.className = 'card-header';
-                cardHeader.style.padding = '12px';
-                cardHeader.style.borderBottom = '1px solid #eee';
-                cardHeader.style.display = 'flex';
-                cardHeader.style.justifyContent = 'space-between';
-                cardHeader.style.alignItems = 'center';
-                cardHeader.style.cursor = 'pointer';
-                
-                // 设置卡片头部内容
-                cardHeader.innerHTML = `
-                  <div>
-                    <h2 class="card-title" style="margin: 0; font-size: 16px;">
-                      <i class="material-icons" style="vertical-align: middle;">comment</i>
-                      ${group.commentName}
-                    </h2>
+              // 设置卡片头部内容
+              cardHeader.innerHTML = `
+                <div style="width: 100%;">
+                  <h2 class="card-title" style="margin: 0; font-size: 16px; margin-bottom: 8px;">
+                    <i class="material-icons" style="vertical-align: middle;">comment</i>
+                    ${group.commentName}
+                  </h2>
+                  <div style="font-size: 14px; font-weight: bold; color: #003974;">
+                    ${unitSummary}
                   </div>
-                  <div style="text-align: right;">
-                    <div style="font-size: 14px; font-weight: bold; color: #003974;">
-                      ${unitSummary}
+                </div>
+              `;
+              
+              // 卡片详情（初始隐藏）
+              const cardDetails = document.createElement('div');
+              cardDetails.className = 'card-details';
+              cardDetails.style.display = 'none';
+              cardDetails.style.padding = '0 12px 12px 12px';
+              
+              // 为每条记录创建详情项
+              group.records.forEach(record => {
+                const typeClass = record.type === 'stock-in' ? 'success' : 'danger';
+                const statusBarColor = record.type === 'stock-in' ? '#4caf50' : '#f44336';
+                const typeIcon = record.type === 'stock-in' ? 'add_circle' : 'remove_circle';
+                
+                const detailItem = document.createElement('div');
+                detailItem.className = 'detail-item';
+                detailItem.style.padding = '8px 0';
+                detailItem.style.borderBottom = '1px dashed #eee';
+                
+                detailItem.innerHTML = `
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center;">
+                      <i class="material-icons" style="color: ${statusBarColor}; margin-right: 8px; font-size: 16px;">${typeIcon}</i>
+                      <span style="font-weight: 500;">${record.productName}</span>
                     </div>
+                    <div style="color: ${statusBarColor}; font-weight: bold;">
+                      ${record.type === 'stock-in' ? '+' : '-'}${record.quantity} ${record.unit || 'pcs'}
+                    </div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #777;">
+                    <div>${record.category || 'N/A'}</div>
+                    <div>${formatTime(new Date(record.time))}</div>
                   </div>
                 `;
                 
-                // 卡片详情（初始隐藏）
-                const cardDetails = document.createElement('div');
-                cardDetails.className = 'card-details';
-                cardDetails.style.display = 'none';
-                cardDetails.style.padding = '0 12px 12px 12px';
-                
-                // 为每条记录创建详情项
-                group.records.forEach(record => {
-                  const typeClass = record.type === 'stock-in' ? 'success' : 'danger';
-                  const statusBarColor = record.type === 'stock-in' ? '#4caf50' : '#f44336';
-                  const typeIcon = record.type === 'stock-in' ? 'add_circle' : 'remove_circle';
-                  
-                  const detailItem = document.createElement('div');
-                  detailItem.className = 'detail-item';
-                  detailItem.style.padding = '8px 0';
-                  detailItem.style.borderBottom = '1px dashed #eee';
-                  
-                  detailItem.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                      <div style="display: flex; align-items: center;">
-                        <i class="material-icons" style="color: ${statusBarColor}; margin-right: 8px; font-size: 16px;">${typeIcon}</i>
-                        <span style="font-weight: 500;">${record.productName}</span>
-                      </div>
-                      <div style="color: ${statusBarColor}; font-weight: bold;">
-                        ${record.type === 'stock-in' ? '+' : '-'}${record.quantity} ${record.unit || 'pcs'}
-                      </div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: #777;">
-                      <div>${record.category || 'N/A'}</div>
-                      <div>${formatTime(new Date(record.time))}</div>
-                    </div>
-                  `;
-                  
-                  cardDetails.appendChild(detailItem);
-                });
-                
-                // 添加切换详情显示的事件监听器
-                cardHeader.addEventListener('click', () => {
-                  if (cardDetails.style.display === 'none') {
-                    cardDetails.style.display = 'block';
-                    cardHeader.style.borderBottom = '1px solid #eee';
-                  } else {
-                    cardDetails.style.display = 'none';
-                    cardHeader.style.borderBottom = 'none';
-                  }
-                });
-                
-                // 组装卡片
-                card.appendChild(cardHeader);
-                card.appendChild(cardDetails);
-                
-                // 添加到容器
-                historyCards.appendChild(card);
+                cardDetails.appendChild(detailItem);
               });
+              
+              // 添加切换详情显示的事件监听器
+              cardHeader.addEventListener('click', () => {
+                if (cardDetails.style.display === 'none') {
+                  cardDetails.style.display = 'block';
+                  cardHeader.style.borderBottom = '1px solid #eee';
+                } else {
+                  cardDetails.style.display = 'none';
+                  cardHeader.style.borderBottom = 'none';
+                }
+              });
+              
+              // 组装卡片
+              card.appendChild(cardHeader);
+              card.appendChild(cardDetails);
+              
+              // 添加到容器
+              historyCards.appendChild(card);
             });
-            
-            historyContainer.style.display = 'block';
-          } else {
-            noHistory.style.display = 'block';
-          }
+          });
+          
+          historyContainer.style.display = 'block';
         })
         .catch((error) => {
           historyError.textContent = 'Failed to load history: ' + error.message;
@@ -2937,12 +2961,12 @@
     
     // 格式化日期函数
     function formatDate(date) {
-      return date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
+      // 返回DD-MM-YYYY格式的日期
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始，需要+1
+      const year = date.getFullYear();
+      
+      return `${day}-${month}-${year}`;
     }
     
     // 格式化时间函数
