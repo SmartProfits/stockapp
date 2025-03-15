@@ -1192,6 +1192,86 @@
       max-width: 500px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
+
+    /* 网格布局样式 */
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    
+    .cards-container.grid-1x1 {
+      grid-template-columns: 1fr;
+    }
+    
+    .cards-container.grid-2x2 {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+    
+    .cards-container.grid-3x3 {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    
+    .cards-container.grid-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .cards-container.grid-list .card {
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 0;
+      align-items: center;
+      padding: 10px;
+    }
+    
+    .cards-container.grid-list .card-image {
+      width: 60px;
+      height: 60px;
+      min-width: 60px;
+      margin-right: 16px;
+      margin-bottom: 0;
+    }
+    
+    .cards-container.grid-list .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .cards-container.grid-list .card-content {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0;
+    }
+    
+    .cards-container.grid-list .card-title {
+      font-size: 16px;
+      margin: 0 16px 0 0;
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .cards-container.grid-list .card-info {
+      margin: 0 16px 0 0;
+      white-space: nowrap;
+    }
+    
+    .cards-container.grid-list .card-actions {
+      display: flex;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .cards-container.grid-list .checkbox-container {
+      margin-right: 10px;
+    }
   </style>
 </head>
 <body>
@@ -1363,6 +1443,10 @@
       <div class="grid-menu-item" data-grid="grid-3x3">
         <i class="material-icons">grid_view</i>
         <span>Triple Column (3x3)</span>
+      </div>
+      <div class="grid-menu-item" data-grid="grid-list">
+        <i class="material-icons">view_list</i>
+        <span>List View</span>
       </div>
     </div>
   </div>
@@ -1624,6 +1708,9 @@
         <div class="grid-menu-item" data-grid="grid-3x3">
           <i class="material-icons">grid_view</i> Triple Column
         </div>
+        <div class="grid-menu-item" data-grid="grid-list">
+          <i class="material-icons">view_list</i> List View
+        </div>
       </div>
       
       <!-- 加载中旋转图标 -->
@@ -1840,6 +1927,10 @@
         <div class="grid-menu-item" data-grid="grid-3x3">
           <i class="material-icons">grid_view</i>
           <span>Triple Column (3x3)</span>
+        </div>
+        <div class="grid-menu-item" data-grid="grid-list">
+          <i class="material-icons">view_list</i>
+          <span>List View</span>
         </div>
       </div>
       
@@ -2367,7 +2458,7 @@
     // 更新网格视图
     function updateGridView(gridType) {
       // 先清除所有网格类
-      inventoryCards.classList.remove('grid-1x1', 'grid-2x2', 'grid-3x3');
+      inventoryCards.classList.remove('grid-1x1', 'grid-2x2', 'grid-3x3', 'grid-list');
       // 然后添加指定的网格类
       inventoryCards.classList.add('cards-container', gridType);
       
@@ -2386,6 +2477,9 @@
           break;
         case 'grid-3x3':
           gridIcon.textContent = 'grid_view';
+          break;
+        case 'grid-list':
+          gridIcon.textContent = 'view_list';
           break;
       }
       
@@ -4145,7 +4239,7 @@
     // 更新Stock Out网格视图
     function updateStockOutGridView(gridType) {
       // 先清除所有网格类
-      stockOutCards.classList.remove('grid-1x1', 'grid-2x2', 'grid-3x3');
+      stockOutCards.classList.remove('grid-1x1', 'grid-2x2', 'grid-3x3', 'grid-list');
       // 然后添加指定的网格类
       stockOutCards.classList.add(gridType);
       
@@ -4164,6 +4258,9 @@
           break;
         case 'grid-3x3':
           gridIcon.textContent = 'grid_view';
+          break;
+        case 'grid-list':
+          gridIcon.textContent = 'view_list';
           break;
       }
       
@@ -4193,259 +4290,6 @@
       }
       
       currentStockOutGridView = gridType;
-    }
-    
-    // 修改变量，移除Select Mode Toggle相关代码
-    let selectedItems = [];
-    
-    // 添加批量出货相关变量引用
-    const batchItemCount = document.getElementById('batch-item-count');
-    const batchItemsList = document.getElementById('batch-items-list');
-    const batchStockOutModal = document.getElementById('batch-stock-out-modal');
-    const closeBatchModal = document.getElementById('close-batch-modal');
-    const cancelBatchStockOut = document.getElementById('cancel-batch-stock-out');
-    const confirmBatchStockOut = document.getElementById('confirm-batch-stock-out');
-    const batchStockOutComment = document.getElementById('batch-stock-out-comment');
-    const batchModalError = document.getElementById('batch-modal-error');
-    
-    // 批量出货按钮点击事件
-    batchStockOutFab.addEventListener('click', () => {
-      // 获取所有选中的项目
-      updateSelectedItems();
-      
-      if (selectedItems.length === 0) {
-        alert('Please select at least one item for stock out');
-        return;
-      }
-      
-      batchItemCount.textContent = selectedItems.length;
-      
-      // 生成项目列表HTML
-      let itemsListHtml = '';
-      selectedItems.forEach(item => {
-        itemsListHtml += `
-          <div class="batch-item">
-            <div><strong>${item.name}</strong> (${item.category})</div>
-            <div>Remove: ${item.quantity} ${item.unit} (Max: ${item.maxQuantity})</div>
-          </div>
-        `;
-      });
-      
-      batchItemsList.innerHTML = itemsListHtml;
-      batchStockOutComment.selectedIndex = 0;
-      batchModalError.style.display = 'none';
-      
-      batchStockOutModal.style.display = 'block';
-    });
-
-    // 关闭批量出库模态框
-    function closeBatchStockOutModal() {
-      batchStockOutModal.style.display = 'none';
-    }
-    
-    closeBatchModal.addEventListener('click', closeBatchStockOutModal);
-    cancelBatchStockOut.addEventListener('click', closeBatchStockOutModal);
-    
-    // 确认批量出库
-    confirmBatchStockOut.addEventListener('click', async function() {
-      const comment = batchStockOutComment.value;
-      
-      if (!comment) {
-        batchModalError.textContent = 'Please select a comment';
-        batchModalError.style.display = 'block';
-        return;
-      }
-      
-      // 验证选择的数量
-      for (const item of selectedItems) {
-        if (item.quantity <= 0 || item.quantity > item.maxQuantity) {
-          batchModalError.textContent = `Invalid quantity for ${item.name}. Must be between 1 and ${item.maxQuantity}`;
-          batchModalError.style.display = 'block';
-          return;
-        }
-      }
-      
-      // 获取当前用户
-      const user = auth.currentUser;
-      if (!user) {
-        batchModalError.textContent = 'User not authenticated';
-        batchModalError.style.display = 'block';
-        return;
-      }
-      
-      // 显示加载指示器
-      stockOutLoading.style.display = 'flex';
-      closeBatchStockOutModal();
-      
-      try {
-        // 批量处理所有出库操作
-        const updatePromises = selectedItems.map(async item => {
-          const itemRef = db.ref(`${item.locationPath}/${item.id}`);
-          
-          // 获取最新的商品数据
-          const snapshot = await itemRef.once('value');
-          const currentData = snapshot.val();
-          
-          if (!currentData || currentData.quantity < item.quantity) {
-            throw new Error(`Insufficient stock for ${item.name}`);
-          }
-          
-          // 更新库存数量
-          await itemRef.update({
-            quantity: currentData.quantity - item.quantity,
-            modifiedTime: new Date().toISOString(),
-            modifiedBy: user.displayName || user.email.split('@')[0] || 'Unknown'
-          });
-          
-          // 添加交易记录
-          await db.ref('transactions').push({
-            type: 'stock-out',
-            productId: item.id,
-            productName: item.name,
-            category: item.category,
-            quantity: -item.quantity, // 使用负数表示出库
-            unit: item.unit,
-            location: item.location,
-            time: new Date().toISOString(),
-            user: user.displayName || user.email.split('@')[0] || 'Unknown',
-            comment: comment,
-            shop: item.location
-          });
-        });
-        
-        // 等待所有更新完成
-        await Promise.all(updatePromises);
-        
-        // 保存当前选中的项目数量，因为后面会清空selectedItems
-        const processedItemsCount = selectedItems.length;
-        
-        // 成功后清空全局选中项
-        globalSelectedStockOutItems = [];
-        
-        // 重置选择状态 - 更新代码以移除对不存在变量的引用
-        // 取消所有选中的复选框
-        document.querySelectorAll('#stock-out-cards .card .item-checkbox:checked').forEach(checkbox => {
-          checkbox.checked = false;
-          checkbox.closest('.card').classList.remove('selected');
-        });
-        
-        // 清空选择的项目数组
-        selectedItems = [];
-        
-        // 重新加载数据
-        loadStockOutItems();
-        
-        // 显示成功消息
-        alert(`Successfully processed ${processedItemsCount} item(s) stock out`);
-      } catch (error) {
-        alert(`Error: ${error.message}`);
-        console.error('Batch stock out error:', error);
-      } finally {
-        // 隐藏加载指示器
-        stockOutLoading.style.display = 'none';
-      }
-    });
-
-    // 调整现有的loadStockOutItems函数在加载完成后应用网格视图
-    const originalLoadStockOutItems = loadStockOutItems;
-    loadStockOutItems = function() {
-      const result = originalLoadStockOutItems.apply(this, arguments);
-      
-      // 在数据加载完成后确保应用网格视图设置
-      setTimeout(() => {
-        console.log('Applying stored stock out grid view:', currentStockOutGridView);
-        updateStockOutGridView(currentStockOutGridView);
-        
-        // 确保卡片显示时应用网格视图
-        if (stockOutCards.style.display === 'none') {
-          stockOutCards.style.display = 'grid';
-        }
-      }, 200);
-      
-      return result;
-    };
-
-    // 初始化Add Stock页面网格视图功能
-    const addStockGridViewFab = document.getElementById('add-stock-grid-view-fab');
-    const addStockGridMenu = document.getElementById('add-stock-grid-menu');
-    const addStockGridMenuItems = document.querySelectorAll('#add-stock-grid-menu .grid-menu-item');
-    
-    // 初始化Add Stock默认网格视图
-    let currentAddStockGridView = localStorage.getItem('addStockGridView') || 'grid-1x1';
-    
-    // 显示/隐藏Add Stock网格菜单
-    addStockGridViewFab.addEventListener('click', () => {
-      addStockGridMenu.classList.toggle('active');
-    });
-    
-    // 处理Add Stock网格选择
-    addStockGridMenuItems.forEach(item => {
-      item.addEventListener('click', () => {
-        const gridType = item.getAttribute('data-grid');
-        updateAddStockGridView(gridType);
-        localStorage.setItem('addStockGridView', gridType); // 保存用户偏好
-        addStockGridMenu.classList.remove('active');
-      });
-    });
-    
-    // 点击其他地方关闭Add Stock网格菜单
-    document.addEventListener('click', (event) => {
-      if (!addStockGridViewFab.contains(event.target) && !addStockGridMenu.contains(event.target)) {
-        addStockGridMenu.classList.remove('active');
-      }
-    });
-    
-    // 更新Add Stock网格视图
-    function updateAddStockGridView(gridType) {
-      // 先清除所有网格类
-      addStockCards.classList.remove('grid-1x1', 'grid-2x2', 'grid-3x3');
-      // 然后添加指定的网格类
-      addStockCards.classList.add(gridType);
-      
-      // 检测是否为手机屏幕
-      const isMobileDevice = window.innerWidth >= 360 && window.innerWidth <= 428;
-      
-      // 更新网格视图按钮图标
-      const gridIcon = addStockGridViewFab.querySelector('.material-icons');
-      
-      switch(gridType) {
-        case 'grid-1x1':
-          gridIcon.textContent = 'view_agenda';
-          break;
-        case 'grid-2x2':
-          gridIcon.textContent = 'view_module';
-          break;
-        case 'grid-3x3':
-          gridIcon.textContent = 'grid_view';
-          break;
-      }
-      
-      // 标记当前活动视图
-      addStockGridMenuItems.forEach(item => {
-        if (item.getAttribute('data-grid') === gridType) {
-          item.style.fontWeight = 'bold';
-          item.style.color = '#003974';
-        } else {
-          item.style.fontWeight = 'normal';
-          item.style.color = '';
-        }
-      });
-      
-      // 根据设备类型和网格视图调整布局
-      if (isMobileDevice) {
-        // 在手机上特别处理3x3模式
-        if (gridType === 'grid-3x3') {
-          document.querySelectorAll('#add-stock-cards .action-text').forEach(el => {
-            el.style.display = 'none';
-          });
-        } else {
-          document.querySelectorAll('#add-stock-cards .action-text').forEach(el => {
-            el.style.display = 'inline';
-          });
-        }
-      }
-      
-      currentAddStockGridView = gridType;
     }
     
     // 修改loadAddStockItems函数以确保正确应用网格视图
